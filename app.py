@@ -18,6 +18,22 @@ DATABASE = Path(os.getenv("DATABASE_PATH", BASE_DIR / "store.db"))
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
 
+SHOPIER_LULU_BOOK_PAYMENT_URL = os.getenv(
+    "SHOPIER_LULU_BOOK_PAYMENT_URL",
+    "https://www.shopier.com/",
+)
+SEED_PRODUCTS = [
+    {
+        "title": "ألوان وحروف مع لولو",
+        "short_description": "كتاب تلوين وتعليم مبكر للأطفال من 3 إلى 6 سنوات، يجمع الحروف والأرقام والأشكال والحيوانات في أنشطة ممتعة.",
+        "description": "كتاب PDF عربي من 9 صفحات يساعد الطفل على التعرّف إلى الحروف والأرقام والأشكال والحيوانات من خلال التلوين والعدّ والتتبع والرسم. يتضمن أنشطة بسيطة مناسبة للمنزل أو الروضة، وصفحة شهادة إتمام تشجّع الطفل على مواصلة التعلّم.",
+        "price": "19.90",
+        "image_url": "",
+        "payment_url": SHOPIER_LULU_BOOK_PAYMENT_URL,
+        "download_url": "",
+    }
+]
+
 app = Flask(__name__)
 app.config.update(
     SECRET_KEY=SECRET_KEY,
@@ -65,6 +81,30 @@ def init_db():
         );
         """
     )
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    for product in SEED_PRODUCTS:
+        exists = db.execute(
+            "SELECT 1 FROM products WHERE title = ? LIMIT 1",
+            (product["title"],),
+        ).fetchone()
+        if exists is None:
+            db.execute(
+                """INSERT INTO products
+                   (title, short_description, description, price, image_url,
+                    payment_url, download_url, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    product["title"],
+                    product["short_description"],
+                    product["description"],
+                    product["price"],
+                    product["image_url"],
+                    product["payment_url"],
+                    product["download_url"],
+                    now,
+                    now,
+                ),
+            )
     db.commit()
 
 
