@@ -1,0 +1,4 @@
+ADMIN_PASSWORD=غيّر-هذه-الكلمة-في-Render
+SECRET_KEY=ضع-قيمة-عشوائية-طويلة-هنا
+STORE_NAME=متجري الرقمي
+# DATABASE_PATH=/var/data/store.db
