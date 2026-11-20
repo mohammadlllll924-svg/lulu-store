@@ -10,7 +10,7 @@
     <img class="hero-image" src="{{ url_for('static', filename='images/lulu-hero.png') }}" alt="أب وابنته يستمتعان بقراءة كتاب معاً">
     <nav class="site-nav">
       <a href="{{ url_for('index') }}" class="logo-mark"><span class="logo-dot">ل</span><span class="brand-font">{{ store_name }}</span></a>
-      <a href="{{ url_for('admin_login') }}" class="admin-link">دخول الإدارة</a>
+      <div class="nav-links"><a href="{{ url_for('static', filename='articles/index.html') }}" class="articles-link">المقالات المجانية</a><a href="{{ url_for('admin_login') }}" class="admin-link">دخول الإدارة</a></div>
     </nav>
     <div class="hero-content">
       <div class="hero-copy">

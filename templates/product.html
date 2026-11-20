@@ -8,7 +8,7 @@
 <body>
   <nav class="site-nav">
     <a href="{{ url_for('index') }}" class="logo-mark"><span class="logo-dot">ل</span><span class="brand-font">{{ store_name }}</span></a>
-    <a href="{{ url_for('index') }}" class="back-link">العودة إلى المتجر</a>
+    <div class="nav-links"><a href="{{ url_for('static', filename='articles/index.html') }}" class="articles-link">المقالات المجانية</a><a href="{{ url_for('index') }}" class="back-link">العودة إلى المتجر</a></div>
   </nav>
   <main class="detail-shell">
     <div class="soft-paper detail-card">
