@@ -68,6 +68,33 @@ SEED_PRODUCTS = [
         "payment_url": "",
         "download_url": "/static/downloads/lulu-brave-little-bear.pdf",
     },
+    {
+        "title": "مغامرات لولو: الأرقام | Lulu'nun Maceraları: Sayılar",
+        "short_description": "كتاب PDF ثنائي اللغة عربي–تركي للأطفال من 3 إلى 6 سنوات لتعلّم الأرقام والعد والأنماط والمسائل البسيطة بطريقة مرحة.",
+        "description": "كتاب أنشطة ثنائي اللغة من 7 صفحات يعرّف الطفل بالأرقام العربية وأسمائها التركية مع نطق عربي مبسّط، ويقدّم تدريبات العد والتعرّف إلى الأنماط ومسائل الجمع والرسم. مناسب للمنزل والروضة، بصيغة PDF وأسلوب تلويني ممتع للأطفال من 3 إلى 6 سنوات.",
+        "price": "299.90",
+        "image_url": "",
+        "payment_url": os.getenv("SHOPIER_LULU_NUMBERS_PAYMENT_URL", "https://www.shopier.com/"),
+        "download_url": "",
+    },
+    {
+        "title": "مغامرات لولو: الألوان والأشكال | Lulu'nun Maceraları: Renkler ve Şekiller",
+        "short_description": "كتاب PDF ثنائي اللغة عربي–تركي لاكتشاف الألوان والأشكال من خلال التلوين والبحث والرسم.",
+        "description": "كتاب أنشطة ثنائي اللغة من 7 صفحات يساعد الأطفال من 3 إلى 6 سنوات على تعلّم الألوان والأشكال بالعربية والتركية، مع أنشطة توصيل ولعبة بحث وتمارين رسم وتلوين. يتضمن الكلمات التركية الأساسية بنطق عربي مبسّط عند الحاجة، وهو مناسب للمنزل أو الروضة.",
+        "price": "289.90",
+        "image_url": "",
+        "payment_url": os.getenv("SHOPIER_LULU_COLORS_PAYMENT_URL", "https://www.shopier.com/"),
+        "download_url": "",
+    },
+    {
+        "title": "مغامرات لولو: الحيوانات والكلمات | Lulu'nun Maceraları: Hayvanlar ve Kelimeler",
+        "short_description": "كتاب PDF ثنائي اللغة عربي–تركي يتعرّف فيه الطفل إلى الحيوانات وكلماتها وبيئاتها من خلال التلوين والرسم.",
+        "description": "كتاب أنشطة ثنائي اللغة من 7 صفحات يعرّف الأطفال من 3 إلى 6 سنوات بالحيوانات وأسمائها بالعربية والتركية، مع نطق عربي مبسّط للكلمات التركية. يتضمن أنشطة مطابقة الحيوان ببيئته وطعامه، وصفحة للرسم وقصة صغيرة لتنمية اللغة والخيال.",
+        "price": "299.90",
+        "image_url": "",
+        "payment_url": os.getenv("SHOPIER_LULU_ANIMALS_PAYMENT_URL", "https://www.shopier.com/"),
+        "download_url": "",
+    },
 ]
 
 app = Flask(__name__)
