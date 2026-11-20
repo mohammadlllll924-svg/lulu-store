@@ -30,8 +30,44 @@ SEED_PRODUCTS = [
         "price": "24.90",
         "image_url": "",
         "payment_url": SHOPIER_LULU_BOOK_PAYMENT_URL,
-        "download_url": "",
-    }
+        "download_url": "/static/downloads/lulu-colors-letters-ar-tr.pdf",
+    },
+    {
+        "title": "مغامرات لولو — كتاب التلوين",
+        "short_description": "كتاب تلوين من 25 صفحة برسومات لطيفة تشجع الطفل على الخيال والتركيز واللعب الهادئ.",
+        "description": "رحلة تلوين من 25 صفحة مع لولو، مناسبة للأطفال في المنزل أو الروضة. كل صفحة تمنح الطفل مساحة للتلوين والتخيل دون تكرار فكرة المنتجات الأخرى.",
+        "price": "17.90",
+        "image_url": "/static/images/lulu-adventures.jpg",
+        "payment_url": "",
+        "download_url": "/static/downloads/lulu-adventures-coloring-pages.pdf",
+    },
+    {
+        "title": "حزمة أوراق العمل الأولى مع لولو",
+        "short_description": "نسخة مركزة من 10 صفحات للتتبع والعدّ والمطابقة والمهارات المبكرة، للاستخدام السريع في البيت أو الروضة.",
+        "description": "حزمة تعليمية قصيرة من 10 صفحات، تختلف عن كتب التلوين والقصص: تركز على مهارات ما قبل الكتابة، العدّ، المطابقة والانتباه من خلال أنشطة عملية بسيطة.",
+        "price": "15.90",
+        "image_url": "/static/images/lulu-worksheets.jpg",
+        "payment_url": "",
+        "download_url": "/static/downloads/lulu-preschool-worksheets.pdf",
+    },
+    {
+        "title": "بطاقات لولو المصورة: عربي–تركي–إنجليزي",
+        "short_description": "8 صفحات من المفردات المصورة بثلاث لغات لمساعدة الطفل على ربط الصورة بالكلمة بطريقة مرحة.",
+        "description": "بطاقات مفردات متعددة اللغات من 8 صفحات، تجمع العربية والتركية والإنجليزية في نشاط واحد. صممت للمراجعة الشفوية واللعب مع أحد أفراد العائلة، وليست كتاب تلوين أو قصة.",
+        "price": "12.90",
+        "image_url": "/static/images/lulu-flashcards.jpg",
+        "payment_url": "",
+        "download_url": "/static/downloads/lulu-trilingual-flashcards.pdf",
+    },
+    {
+        "title": "الدب الصغير الشجاع",
+        "short_description": "قصة مصورة من 10 صفحات عن الشجاعة الهادئة وطلب المساعدة ومشاركة المشاعر.",
+        "description": "قصة قصيرة من 10 صفحات مناسبة للقراءة المشتركة. يتعلم الدب الصغير أن الشجاعة لا تعني غياب الخوف، بل التقدم خطوة وطلب المساندة عند الحاجة.",
+        "price": "14.90",
+        "image_url": "/static/images/lulu-brave-bear.jpg",
+        "payment_url": "",
+        "download_url": "/static/downloads/lulu-brave-little-bear.pdf",
+    },
 ]
 
 app = Flask(__name__)
@@ -108,11 +144,16 @@ def init_db():
         else:
             db.execute(
                 """UPDATE products
-                   SET short_description = ?, description = ?, updated_at = ?
+                   SET short_description = ?, description = ?, price = ?, image_url = ?,
+                       payment_url = ?, download_url = ?, updated_at = ?
                    WHERE title = ?""",
                 (
                     product["short_description"],
                     product["description"],
+                    product["price"],
+                    product["image_url"],
+                    product["payment_url"],
+                    product["download_url"],
                     now,
                     product["title"],
                 ),

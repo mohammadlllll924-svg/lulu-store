@@ -56,6 +56,7 @@ button, a { transition: .2s ease; }
 .product-card h3 { margin: 0; color: var(--sage-deep); font-size: 1.15rem; line-height: 1.7; }
 .price { flex: none; border-radius: 999px; padding: .35rem .7rem; background: #f7e5bf; color: #9b6721; font-size: .82rem; font-weight: 800; }
 .product-card p { min-height: 4.2rem; margin: .75rem 0 1.15rem; color: var(--muted); font-size: .86rem; line-height: 1.9; }
+.payment-status { display: inline-block; margin-bottom: .85rem; border-radius: 999px; padding: .28rem .65rem; background: #f3ead8; color: #8f6a2b; font-size: .76rem; font-weight: 800; }
 .text-link { display: inline-flex; align-items: center; gap: .35rem; color: var(--terracotta-deep); font-size: .9rem; font-weight: 800; }
 .text-link:hover { color: var(--sage-deep); }
 
@@ -70,6 +71,9 @@ button, a { transition: .2s ease; }
 .detail-copy .price-large { margin: 1.1rem 0; color: var(--terracotta-deep); font-size: 1.65rem; font-weight: 800; }
 .detail-copy .description { color: var(--muted); line-height: 2.1; }
 .detail-copy .cta { width: 100%; border: 0; cursor: pointer; font: inherit; }
+.payment-pending { width: 100%; margin-top: 1.35rem; border: 1px solid rgba(143, 106, 43, .25); border-radius: 999px; padding: .9rem 1.4rem; background: #f3ead8; color: #8f6a2b; text-align: center; font-weight: 800; }
+.download-link { display: block; margin-top: 1rem; color: var(--sage-deep); text-align: center; font-size: .88rem; font-weight: 800; }
+.download-link:hover { color: var(--terracotta-deep); }
 .back-link { display: inline-flex; margin-bottom: 1.25rem; color: var(--sage-deep); font-size: .85rem; font-weight: 700; }
 
 .success-page { display: grid; min-height: 100vh; place-items: center; padding: 1.25rem; }

@@ -22,10 +22,16 @@
       <div class="detail-copy">
         <div class="eyebrow">كتاب رقمي ثنائي اللغة</div>
         <h1>{{ product.title }}</h1>
-        <div class="price-large">{{ product.price }} ر.س</div>
+        <div class="price-large">{{ product.price }} ₺</div>
         <div class="description">{{ product.description or product.short_description }}</div>
-        <a href="{{ url_for('checkout', product_id=product.id) }}" class="cta">شراء آمن عبر Shopier <span aria-hidden="true">←</span></a>
-        <p style="text-align:center;font-size:.78rem;color:var(--muted);">بعد إتمام الدفع ستعود إلى صفحة تحميل الملف.</p>
+        {% if product.payment_url %}
+          <a href="{{ url_for('checkout', product_id=product.id) }}" class="cta">شراء آمن عبر Shopier <span aria-hidden="true">←</span></a>
+          <p style="text-align:center;font-size:.78rem;color:var(--muted);">بعد إتمام الدفع ستعود إلى صفحة تحميل الملف.</p>
+        {% else %}
+          <div class="payment-pending" role="status">الدفع قيد التجهيز</div>
+          <p style="text-align:center;font-size:.78rem;color:var(--muted);">سيتم تفعيل رابط الدفع لهذا المنتج قريباً.</p>
+        {% endif %}
+        {% if product.download_url %}<a class="download-link" href="{{ product.download_url }}" download>تنزيل ملف المنتج PDF <span aria-hidden="true">↓</span></a>{% endif %}
       </div>
     </div>
   </main>

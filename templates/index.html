@@ -42,8 +42,9 @@
               <div class="product-image" role="img" aria-label="صورة منتج رقمي">📚</div>
             {% endif %}
             <div class="product-card-body">
-              <div class="product-meta"><h3>{{ product.title }}</h3><span class="price">{{ product.price }} ر.س</span></div>
+              <div class="product-meta"><h3>{{ product.title }}</h3><span class="price">{{ product.price }} ₺</span></div>
               <p>{{ product.short_description }}</p>
+              {% if not product.payment_url %}<span class="payment-status">الدفع قيد التجهيز</span>{% endif %}
               <a href="{{ url_for('product', product_id=product.id) }}" class="text-link">التفاصيل والشراء <span aria-hidden="true">←</span></a>
             </div>
           </article>
