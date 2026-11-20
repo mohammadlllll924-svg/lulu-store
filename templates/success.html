@@ -1,1 +1,28 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تمت العملية | {{ store_name }}</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet"><style>body{font-family:Cairo,sans-serif}</style></head><body class="flex min-h-screen items-center justify-center bg-slate-50 px-5 text-slate-800"><main class="w-full max-w-xl rounded-3xl bg-white p-8 text-center shadow-xl ring-1 ring-slate-200 md:p-12">{% if product %}<div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-4xl text-emerald-600">✓</div><h1 class="text-3xl font-extrabold">شكراً لشرائك!</h1><p class="mt-4 leading-8 text-slate-500">تم تجهيز منتج <strong class="text-slate-800">{{ product.title }}</strong> للتحميل. اضغط الزر أدناه للحصول على ملفك.</p>{% if product.download_url %}<a href="{{ product.download_url }}" target="_blank" rel="noopener" class="mt-8 block rounded-xl bg-emerald-600 px-6 py-4 font-bold text-white hover:bg-emerald-700">تحميل المنتج الآن</a>{% else %}<div class="mt-8 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">لم يتم إعداد رابط التحميل لهذا المنتج بعد. يرجى التواصل مع الدعم.</div>{% endif %}<a href="{{ url_for('index') }}" class="mt-6 inline-block text-sm font-bold text-violet-600">العودة إلى المتجر</a>{% else %}<h1 class="text-2xl font-extrabold">تعذر العثور على المنتج</h1><a href="{{ url_for('index') }}" class="mt-6 inline-block text-violet-600">العودة إلى المتجر</a>{% endif %}</main></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>تمت العملية | {{ store_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="success-page">
+  <main class="soft-paper success-card">
+    {% if product %}
+      <div class="success-icon">✓</div>
+      <div class="eyebrow">أهلاً بكم في عالم لولو</div>
+      <h1 class="brand-font">شكراً لشرائك!</h1>
+      <p>تم تجهيز منتج <strong>{{ product.title }}</strong> للتحميل. اضغط الزر أدناه للحصول على ملفك.</p>
+      {% if product.download_url %}
+        <a href="{{ product.download_url }}" target="_blank" rel="noopener" class="cta">تحميل المنتج الآن <span aria-hidden="true">↓</span></a>
+      {% else %}
+        <div class="alert" style="margin-top:1.5rem;">لم يتم إعداد رابط التحميل لهذا المنتج بعد. يرجى التواصل مع الدعم.</div>
+      {% endif %}
+      <a href="{{ url_for('index') }}" class="text-link" style="margin-top:1.5rem;">العودة إلى المتجر</a>
+    {% else %}
+      <div class="eyebrow">عذراً</div>
+      <h1 class="brand-font">تعذر العثور على المنتج</h1>
+      <a href="{{ url_for('index') }}" class="text-link" style="margin-top:1.5rem;">العودة إلى المتجر</a>
+    {% endif %}
+  </main>
+</body>
+</html>

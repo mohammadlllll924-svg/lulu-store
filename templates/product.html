@@ -1,1 +1,34 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ product.title }} | {{ store_name }}</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet"><style>body{font-family:Cairo,sans-serif}</style></head><body class="bg-slate-50 text-slate-800"><nav class="border-b bg-white"><div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-5"><a href="{{ url_for('index') }}" class="font-extrabold text-violet-700">{{ store_name }}</a><a href="{{ url_for('index') }}" class="text-sm text-slate-500 hover:text-violet-600">العودة للمتجر</a></div></nav><main class="mx-auto max-w-5xl px-5 py-12"><div class="grid gap-10 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 md:grid-cols-2 md:p-10">{% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.title }}" class="h-80 w-full rounded-2xl object-cover md:h-full">{% else %}<div class="flex min-h-80 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-pink-100 text-8xl">📚</div>{% endif %}<div class="flex flex-col justify-center"><p class="mb-3 text-sm font-bold text-violet-600">منتج رقمي</p><h1 class="text-3xl font-extrabold leading-relaxed md:text-4xl">{{ product.title }}</h1><div class="my-5 text-2xl font-extrabold text-slate-900">{{ product.price }} ر.س</div><div class="whitespace-pre-line leading-8 text-slate-600">{{ product.description or product.short_description }}</div><a href="{{ url_for('checkout', product_id=product.id) }}" class="mt-8 rounded-xl bg-violet-600 px-6 py-4 text-center font-bold text-white shadow-lg shadow-violet-200 hover:bg-violet-700">شراء آمن عبر Shopier</a><p class="mt-3 text-center text-xs text-slate-400">بعد إتمام الدفع ستعود إلى صفحة تحميل الملف.</p></div></div></main></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ product.title }} | {{ store_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <nav class="site-nav">
+    <a href="{{ url_for('index') }}" class="logo-mark"><span class="logo-dot">ل</span><span class="brand-font">{{ store_name }}</span></a>
+    <a href="{{ url_for('index') }}" class="back-link">العودة إلى المتجر</a>
+  </nav>
+  <main class="detail-shell">
+    <div class="soft-paper detail-card">
+      {% if product.image_url %}
+        <img src="{{ product.image_url }}" alt="{{ product.title }}" class="detail-image">
+      {% elif product.title == 'ألوان وحروف مع لولو' %}
+        <img src="{{ url_for('static', filename='images/lulu-book-colors-letters.png') }}" alt="غلاف كتاب ألوان وحروف مع لولو بالعربية والتركية" class="detail-image">
+      {% else %}
+        <div class="detail-image" role="img" aria-label="صورة منتج رقمي">📚</div>
+      {% endif %}
+      <div class="detail-copy">
+        <div class="eyebrow">كتاب رقمي ثنائي اللغة</div>
+        <h1>{{ product.title }}</h1>
+        <div class="price-large">{{ product.price }} ر.س</div>
+        <div class="description">{{ product.description or product.short_description }}</div>
+        <a href="{{ url_for('checkout', product_id=product.id) }}" class="cta">شراء آمن عبر Shopier <span aria-hidden="true">←</span></a>
+        <p style="text-align:center;font-size:.78rem;color:var(--muted);">بعد إتمام الدفع ستعود إلى صفحة تحميل الملف.</p>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">© {{ store_name }} — وقت القراءة أجمل معاً</footer>
+</body>
+</html>
