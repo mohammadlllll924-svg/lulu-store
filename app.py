@@ -1,26 +1,35 @@
+import hashlib
 import os
 import secrets
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from dotenv import load_dotenv
 from flask import (
     Flask, abort, flash, g, redirect, render_template, request,
-    session, url_for
+    send_from_directory, session, url_for,
 )
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE = Path(os.getenv("DATABASE_PATH", BASE_DIR / "store.db"))
+PRIVATE_DOWNLOADS_DIR = Path(
+    os.getenv("PRIVATE_DOWNLOADS_DIR", BASE_DIR / "private_downloads")
+).resolve()
+DATABASE.parent.mkdir(parents=True, exist_ok=True)
+PRIVATE_DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
-SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
+SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 SHOPIER_LULU_BOOK_PAYMENT_URL = os.getenv(
     "SHOPIER_LULU_BOOK_PAYMENT_URL",
-    "https://www.shopier.com/",
+    "",
 )
 SEED_PRODUCTS = [
     {
@@ -30,7 +39,7 @@ SEED_PRODUCTS = [
         "price": "24.90",
         "image_url": "",
         "payment_url": SHOPIER_LULU_BOOK_PAYMENT_URL,
-        "download_url": "/static/downloads/lulu-colors-letters-ar-tr.pdf",
+        "download_url": "lulu-colors-letters-ar-tr.pdf",
     },
     {
         "title": "مغامرات لولو — كتاب التلوين",
@@ -39,7 +48,7 @@ SEED_PRODUCTS = [
         "price": "17.90",
         "image_url": "/static/images/lulu-adventures.jpg",
         "payment_url": "",
-        "download_url": "/static/downloads/lulu-adventures-coloring-pages.pdf",
+        "download_url": "lulu-adventures-coloring-pages.pdf",
     },
     {
         "title": "حزمة أوراق العمل الأولى مع لولو",
@@ -48,7 +57,7 @@ SEED_PRODUCTS = [
         "price": "15.90",
         "image_url": "/static/images/lulu-worksheets.jpg",
         "payment_url": "",
-        "download_url": "/static/downloads/lulu-preschool-worksheets.pdf",
+        "download_url": "lulu-preschool-worksheets.pdf",
     },
     {
         "title": "بطاقات لولو المصورة: عربي–تركي–إنجليزي",
@@ -57,7 +66,7 @@ SEED_PRODUCTS = [
         "price": "12.90",
         "image_url": "/static/images/lulu-flashcards.jpg",
         "payment_url": "",
-        "download_url": "/static/downloads/lulu-trilingual-flashcards.pdf",
+        "download_url": "lulu-trilingual-flashcards.pdf",
     },
     {
         "title": "الدب الصغير الشجاع",
@@ -66,7 +75,7 @@ SEED_PRODUCTS = [
         "price": "14.90",
         "image_url": "/static/images/lulu-brave-bear.jpg",
         "payment_url": "",
-        "download_url": "/static/downloads/lulu-brave-little-bear.pdf",
+        "download_url": "lulu-brave-little-bear.pdf",
     },
     {
         "title": "مغامرات لولو: الأرقام | Lulu'nun Maceraları: Sayılar",
@@ -74,7 +83,7 @@ SEED_PRODUCTS = [
         "description": "كتاب أنشطة ثنائي اللغة من 7 صفحات يعرّف الطفل بالأرقام العربية وأسمائها التركية مع نطق عربي مبسّط، ويقدّم تدريبات العد والتعرّف إلى الأنماط ومسائل الجمع والرسم. مناسب للمنزل والروضة، بصيغة PDF وأسلوب تلويني ممتع للأطفال من 3 إلى 6 سنوات.",
         "price": "299.90",
         "image_url": "",
-        "payment_url": os.getenv("SHOPIER_LULU_NUMBERS_PAYMENT_URL", "https://www.shopier.com/"),
+        "payment_url": os.getenv("SHOPIER_LULU_NUMBERS_PAYMENT_URL", ""),
         "download_url": "",
     },
     {
@@ -83,7 +92,7 @@ SEED_PRODUCTS = [
         "description": "كتاب أنشطة ثنائي اللغة من 7 صفحات يساعد الأطفال من 3 إلى 6 سنوات على تعلّم الألوان والأشكال بالعربية والتركية، مع أنشطة توصيل ولعبة بحث وتمارين رسم وتلوين. يتضمن الكلمات التركية الأساسية بنطق عربي مبسّط عند الحاجة، وهو مناسب للمنزل أو الروضة.",
         "price": "289.90",
         "image_url": "",
-        "payment_url": os.getenv("SHOPIER_LULU_COLORS_PAYMENT_URL", "https://www.shopier.com/"),
+        "payment_url": os.getenv("SHOPIER_LULU_COLORS_PAYMENT_URL", ""),
         "download_url": "",
     },
     {
@@ -92,7 +101,7 @@ SEED_PRODUCTS = [
         "description": "كتاب أنشطة ثنائي اللغة من 7 صفحات يعرّف الأطفال من 3 إلى 6 سنوات بالحيوانات وأسمائها بالعربية والتركية، مع نطق عربي مبسّط للكلمات التركية. يتضمن أنشطة مطابقة الحيوان ببيئته وطعامه، وصفحة للرسم وقصة صغيرة لتنمية اللغة والخيال.",
         "price": "299.90",
         "image_url": "",
-        "payment_url": os.getenv("SHOPIER_LULU_ANIMALS_PAYMENT_URL", "https://www.shopier.com/"),
+        "payment_url": os.getenv("SHOPIER_LULU_ANIMALS_PAYMENT_URL", ""),
         "download_url": "",
     },
 ]
@@ -101,7 +110,12 @@ app = Flask(__name__)
 app.config.update(
     SECRET_KEY=SECRET_KEY,
     DATABASE=str(DATABASE),
-    MAX_CONTENT_LENGTH=2 * 1024 * 1024,
+    MAX_CONTENT_LENGTH=MAX_UPLOAD_BYTES,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv(
+        "SESSION_COOKIE_SECURE", "true" if os.getenv("RENDER") else "false"
+    ).lower() == "true",
 )
 
 
@@ -109,6 +123,7 @@ def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(app.config["DATABASE"])
         g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
 
 
@@ -117,6 +132,25 @@ def close_db(exception=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
+
+
+def normalize_private_filename(value):
+    """Accept only a PDF basename; never treat a stored value as a public URL."""
+    if not value:
+        return ""
+    raw_name = Path(urlsplit(str(value).strip()).path).name
+    safe_name = secure_filename(raw_name)
+    if not safe_name or Path(safe_name).suffix.lower() != ".pdf":
+        return ""
+    return safe_name
+
+
+def private_file_exists(filename):
+    safe_name = normalize_private_filename(filename)
+    if not safe_name:
+        return False
+    candidate = (PRIVATE_DOWNLOADS_DIR / safe_name).resolve()
+    return candidate.parent == PRIVATE_DOWNLOADS_DIR and candidate.is_file()
 
 
 def init_db():
@@ -140,11 +174,37 @@ def init_db():
             product_id INTEGER NOT NULL,
             status TEXT NOT NULL DEFAULT 'pending',
             created_at TEXT NOT NULL,
+            download_token_hash TEXT NOT NULL DEFAULT '',
             FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
         );
         """
     )
-    now = datetime.utcnow().isoformat(timespec="seconds")
+
+    # Safe, in-place migration for existing Render SQLite databases.
+    order_columns = {
+        row[1] for row in db.execute("PRAGMA table_info(orders)").fetchall()
+    }
+    if "download_token_hash" not in order_columns:
+        db.execute(
+            "ALTER TABLE orders ADD COLUMN download_token_hash TEXT NOT NULL DEFAULT ''"
+        )
+
+    # Convert legacy public URLs to private basenames. External URLs are discarded.
+    for row in db.execute("SELECT id, download_url FROM products").fetchall():
+        old_value = row["download_url"] or ""
+        if old_value.startswith("/static/downloads/"):
+            new_value = normalize_private_filename(old_value)
+        elif old_value.startswith("http://") or old_value.startswith("https://"):
+            new_value = ""
+        else:
+            new_value = normalize_private_filename(old_value)
+        if new_value != old_value:
+            db.execute(
+                "UPDATE products SET download_url = ? WHERE id = ?",
+                (new_value, row["id"]),
+            )
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds")
     for product in SEED_PRODUCTS:
         exists = db.execute(
             "SELECT 1 FROM products WHERE title = ? LIMIT 1",
@@ -157,34 +217,14 @@ def init_db():
                     payment_url, download_url, created_at, updated_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    product["title"],
-                    product["short_description"],
-                    product["description"],
-                    product["price"],
-                    product["image_url"],
-                    product["payment_url"],
-                    product["download_url"],
-                    now,
-                    now,
+                    product["title"], product["short_description"],
+                    product["description"], product["price"],
+                    product["image_url"], product["payment_url"],
+                    product["download_url"], now, now,
                 ),
             )
-        else:
-            db.execute(
-                """UPDATE products
-                   SET short_description = ?, description = ?, price = ?, image_url = ?,
-                       payment_url = ?, download_url = ?, updated_at = ?
-                   WHERE title = ?""",
-                (
-                    product["short_description"],
-                    product["description"],
-                    product["price"],
-                    product["image_url"],
-                    product["payment_url"],
-                    product["download_url"],
-                    now,
-                    product["title"],
-                ),
-            )
+        # Existing rows are intentionally left unchanged so administrator edits
+        # and uploaded private-file names survive restarts and deployments.
     db.commit()
 
 
@@ -204,6 +244,17 @@ def inject_globals():
     return {"store_name": os.getenv("STORE_NAME", "متجري الرقمي")}
 
 
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    if request.endpoint in {"success", "download_order"}:
+        response.headers["Cache-Control"] = "private, no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
 @app.route("/")
 def index():
     products = get_db().execute(
@@ -219,7 +270,17 @@ def product(product_id):
     ).fetchone()
     if item is None:
         abort(404)
-    return render_template("product.html", product=item)
+    return render_template(
+        "product.html", product=item,
+        download_ready=private_file_exists(item["download_url"]),
+    )
+
+
+def append_query_params(url, params):
+    parsed = urlsplit(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query.update(params)
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
 
 
 @app.route("/checkout/<int:product_id>", methods=["GET", "POST"])
@@ -232,32 +293,98 @@ def checkout(product_id):
     if not item["payment_url"]:
         flash("رابط الدفع لهذا المنتج غير متاح حالياً. يرجى المحاولة لاحقاً.", "error")
         return redirect(url_for("product", product_id=product_id))
+    if not private_file_exists(item["download_url"]):
+        flash("ملف المنتج غير جاهز للتسليم بعد؛ لم يتم بدء عملية الدفع.", "error")
+        return redirect(url_for("product", product_id=product_id))
 
+    token = secrets.token_urlsafe(32)
     db = get_db()
     cursor = db.execute(
-        "INSERT INTO orders (product_id, status, created_at) VALUES (?, ?, ?)",
-        (product_id, "pending", datetime.utcnow().isoformat(timespec="seconds")),
+        """INSERT INTO orders
+           (product_id, status, created_at, download_token_hash)
+           VALUES (?, ?, ?, ?)""",
+        (
+            product_id,
+            "pending",
+            datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds"),
+            hashlib.sha256(token.encode("utf-8")).hexdigest(),
+        ),
     )
     db.commit()
-    success_url = url_for("success", product_id=product_id, _external=True)
-    separator = "&" if "?" in item["payment_url"] else "?"
-    payment_url = f"{item['payment_url']}{separator}order_id={cursor.lastrowid}&success_url={success_url}"
+    order_id = cursor.lastrowid
+    success_url = url_for(
+        "success", order_id=order_id, token=token, _external=True
+    )
+    payment_url = append_query_params(
+        item["payment_url"],
+        {"order_id": order_id, "success_url": success_url},
+    )
     return redirect(payment_url)
 
 
-@app.route("/success/<int:product_id>")
 @app.route("/success")
-def success(product_id=None):
-    if product_id is None:
-        product_id = request.args.get("product_id", type=int)
-    item = None
-    if product_id:
-        item = get_db().execute(
-            "SELECT * FROM products WHERE id = ?", (product_id,)
-        ).fetchone()
-    if item is None:
-        return render_template("success.html", product=None), 404
-    return render_template("success.html", product=item)
+def success():
+    order_id = request.args.get("order_id", type=int)
+    token = request.args.get("token", "")
+    if not order_id or not token:
+        return render_template(
+            "success.html", product=None, order_status="unverified",
+            download_url=None,
+        ), 400
+
+    order = get_db().execute(
+        """SELECT orders.id, orders.status, orders.download_token_hash,
+                  products.id AS product_id, products.title, products.download_url
+           FROM orders JOIN products ON products.id = orders.product_id
+           WHERE orders.id = ?""",
+        (order_id,),
+    ).fetchone()
+    if order is None or not order["download_token_hash"]:
+        abort(404)
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    if not secrets.compare_digest(order["download_token_hash"], token_hash):
+        abort(404)
+
+    download_url = None
+    if order["status"] == "paid" and private_file_exists(order["download_url"]):
+        download_url = url_for(
+            "download_order", order_id=order_id, token=token
+        )
+    return render_template(
+        "success.html", product=order, order_status=order["status"],
+        download_url=download_url,
+    )
+
+
+@app.route("/download/<int:order_id>")
+def download_order(order_id):
+    token = request.args.get("token", "")
+    order = get_db().execute(
+        """SELECT orders.status, orders.download_token_hash,
+                  products.title, products.download_url
+           FROM orders JOIN products ON products.id = orders.product_id
+           WHERE orders.id = ?""",
+        (order_id,),
+    ).fetchone()
+    if order is None or order["status"] != "paid" or not order["download_token_hash"]:
+        abort(404)
+
+    supplied_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    if not secrets.compare_digest(order["download_token_hash"], supplied_hash):
+        abort(404)
+
+    filename = normalize_private_filename(order["download_url"])
+    if not filename or not private_file_exists(filename):
+        abort(404)
+    download_name = secure_filename(order["title"]) or "digital-product"
+    return send_from_directory(
+        str(PRIVATE_DOWNLOADS_DIR), filename,
+        as_attachment=True,
+        download_name=f"{download_name}.pdf",
+        mimetype="application/pdf",
+        max_age=0,
+        conditional=False,
+    )
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -282,13 +409,21 @@ def admin_logout():
 @app.route("/admin")
 @admin_required
 def admin():
-    products = get_db().execute("SELECT * FROM products ORDER BY id DESC").fetchall()
-    orders = get_db().execute(
+    db = get_db()
+    products = db.execute("SELECT * FROM products ORDER BY id DESC").fetchall()
+    file_ready_by_id = {
+        product["id"]: private_file_exists(product["download_url"])
+        for product in products
+    }
+    orders = db.execute(
         """SELECT orders.*, products.title AS product_title
            FROM orders JOIN products ON products.id = orders.product_id
            ORDER BY orders.id DESC LIMIT 50"""
     ).fetchall()
-    return render_template("admin.html", products=products, orders=orders)
+    return render_template(
+        "admin.html", products=products, orders=orders,
+        file_ready_by_id=file_ready_by_id,
+    )
 
 
 def product_form_values():
@@ -299,8 +434,25 @@ def product_form_values():
         "price": request.form.get("price", "").strip(),
         "image_url": request.form.get("image_url", "").strip(),
         "payment_url": request.form.get("payment_url", "").strip(),
-        "download_url": request.form.get("download_url", "").strip(),
     }
+
+
+def store_uploaded_pdf():
+    uploaded = request.files.get("download_file")
+    if uploaded is None or not uploaded.filename:
+        return ""
+    original_name = secure_filename(uploaded.filename)
+    if not original_name or Path(original_name).suffix.lower() != ".pdf":
+        raise ValueError("ارفع ملفاً بصيغة PDF فقط.")
+    if uploaded.mimetype not in {"application/pdf", "application/octet-stream"}:
+        raise ValueError("نوع الملف غير صالح؛ المطلوب ملف PDF.")
+    header = uploaded.stream.read(5)
+    uploaded.stream.seek(0)
+    if header != b"%PDF-":
+        raise ValueError("الملف لا يبدو ملف PDF صالحاً.")
+    stored_name = f"{secrets.token_hex(16)}.pdf"
+    uploaded.save(PRIVATE_DOWNLOADS_DIR / stored_name)
+    return stored_name
 
 
 @app.route("/admin/products/new", methods=["GET", "POST"])
@@ -310,8 +462,13 @@ def add_product():
         data = product_form_values()
         if not data["title"] or not data["price"]:
             flash("العنوان والسعر حقول مطلوبة.", "error")
-            return render_template("admin.html", form_product=data, form_mode="new")
-        now = datetime.utcnow().isoformat(timespec="seconds")
+            return render_template("admin.html", form_product=data, form_mode="new"), 400
+        try:
+            data["download_url"] = store_uploaded_pdf()
+        except ValueError as error:
+            flash(str(error), "error")
+            return render_template("admin.html", form_product=data, form_mode="new"), 400
+        now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds")
         db = get_db()
         db.execute(
             """INSERT INTO products
@@ -321,7 +478,7 @@ def add_product():
             (*data.values(), now, now),
         )
         db.commit()
-        flash("تمت إضافة المنتج بنجاح.", "success")
+        flash("تمت إضافة المنتج. حُفظ ملف PDF في مساحة خاصة غير قابلة للوصول المباشر.", "success")
         return redirect(url_for("admin"))
     return render_template("admin.html", form_product=None, form_mode="new")
 
@@ -337,17 +494,32 @@ def edit_product(product_id):
         data = product_form_values()
         if not data["title"] or not data["price"]:
             flash("العنوان والسعر حقول مطلوبة.", "error")
-            return render_template("admin.html", form_product=data, form_mode="edit")
+            return render_template(
+                "admin.html", form_product=data, form_mode="edit",
+                current_file_ready=private_file_exists(item["download_url"]),
+            ), 400
+        try:
+            new_file = store_uploaded_pdf()
+        except ValueError as error:
+            flash(str(error), "error")
+            return render_template(
+                "admin.html", form_product=data, form_mode="edit",
+                current_file_ready=private_file_exists(item["download_url"]),
+            ), 400
+        data["download_url"] = new_file or item["download_url"]
         db.execute(
             """UPDATE products SET title=?, short_description=?, description=?,
                price=?, image_url=?, payment_url=?, download_url=?, updated_at=?
                WHERE id=?""",
-            (*data.values(), datetime.utcnow().isoformat(timespec="seconds"), product_id),
+            (*data.values(), datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds"), product_id),
         )
         db.commit()
-        flash("تم تحديث المنتج.", "success")
+        flash("تم تحديث المنتج. رابط التسليم يظل محمياً ولا يظهر في صفحة المنتج.", "success")
         return redirect(url_for("admin"))
-    return render_template("admin.html", form_product=item, form_mode="edit")
+    return render_template(
+        "admin.html", form_product=item, form_mode="edit",
+        current_file_ready=private_file_exists(item["download_url"]),
+    )
 
 
 @app.post("/admin/products/<int:product_id>/delete")
@@ -367,8 +539,14 @@ def update_order_status(order_id):
     if status not in {"pending", "paid", "cancelled"}:
         abort(400)
     db = get_db()
-    db.execute("UPDATE orders SET status = ? WHERE id = ?", (status, order_id))
+    result = db.execute("UPDATE orders SET status = ? WHERE id = ?", (status, order_id))
+    if result.rowcount == 0:
+        abort(404)
     db.commit()
+    if status == "paid":
+        flash("سُجل الطلب كمدفوع. لا تفعل ذلك إلا بعد التحقق من الدفع في لوحة Shopier.", "success")
+    else:
+        flash("تم تحديث حالة الطلب.", "success")
     return redirect(url_for("admin"))
 
 

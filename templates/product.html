@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ product.title }} | {{ store_name }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
@@ -24,14 +25,19 @@
         <h1>{{ product.title }}</h1>
         <div class="price-large">{{ product.price }} ₺</div>
         <div class="description">{{ product.description or product.short_description }}</div>
-        {% if product.payment_url %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}<div class="alert" role="status">{{ message }}</div>{% endfor %}
+        {% endwith %}
+        {% if product.payment_url and download_ready %}
           <a href="{{ url_for('checkout', product_id=product.id) }}" class="cta">شراء آمن عبر Shopier <span aria-hidden="true">←</span></a>
-          <p style="text-align:center;font-size:.78rem;color:var(--muted);">بعد إتمام الدفع ستعود إلى صفحة تحميل الملف.</p>
+          <p style="text-align:center;font-size:.78rem;color:var(--muted);">يُتاح رابط التحميل الخاص بعد تسجيل الطلب كمدفوع والتحقق من الملف.</p>
+        {% elif not download_ready %}
+          <div class="payment-pending" role="status">المنتج قيد التجهيز</div>
+          <p style="text-align:center;font-size:.78rem;color:var(--muted);">سيُفعّل الشراء بعد رفع ملف PDF إلى مساحة التسليم الخاصة.</p>
         {% else %}
           <div class="payment-pending" role="status">الدفع قيد التجهيز</div>
           <p style="text-align:center;font-size:.78rem;color:var(--muted);">سيتم تفعيل رابط الدفع لهذا المنتج قريباً.</p>
         {% endif %}
-        {% if product.download_url %}<a class="download-link" href="{{ product.download_url }}" download>تنزيل ملف المنتج PDF <span aria-hidden="true">↓</span></a>{% endif %}
       </div>
     </div>
   </main>

@@ -1,1 +1,141 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>الإدارة | {{ store_name }}</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet"><style>body{font-family:Cairo,sans-serif}</style></head><body class="min-h-screen bg-slate-100 text-slate-800">{% if login or setup_required %}<main class="flex min-h-screen items-center justify-center px-5"><div class="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">{% if setup_required %}<div class="rounded-2xl bg-amber-50 p-5 text-center text-amber-800"><h1 class="font-bold">يلزم إعداد ADMIN_PASSWORD</h1><p class="mt-2 text-sm leading-7">أضف متغير البيئة ADMIN_PASSWORD في Render ثم أعد تشغيل الخدمة.</p></div>{% else %}<h1 class="text-2xl font-extrabold">دخول لوحة الإدارة</h1><p class="mt-2 text-sm text-slate-500">أدخل كلمة مرور المدير للمتابعة.</p>{% with messages = get_flashed_messages(with_categories=true) %}{% for c,m in messages %}<div class="mt-4 rounded-xl bg-rose-100 p-3 text-sm text-rose-700">{{ m }}</div>{% endfor %}{% endwith %}<form method="post" class="mt-6"><label class="mb-2 block text-sm font-bold">كلمة المرور</label><input type="password" name="password" required autofocus class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-violet-500"><button class="mt-4 w-full rounded-xl bg-violet-600 px-4 py-3 font-bold text-white hover:bg-violet-700">دخول</button></form>{% endif %}<a href="{{ url_for('index') }}" class="mt-6 block text-center text-sm text-slate-500">العودة للمتجر</a></div></main>{% else %}<nav class="border-b bg-white"><div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4"><a href="{{ url_for('index') }}" class="font-extrabold text-violet-700">{{ store_name }}</a><div class="flex gap-4 text-sm"><a href="{{ url_for('admin_logout') }}" class="text-rose-600">تسجيل الخروج</a></div></div></nav><main class="mx-auto max-w-7xl px-5 py-8">{% with messages = get_flashed_messages(with_categories=true) %}{% for c,m in messages %}<div class="mb-5 rounded-xl bg-emerald-100 p-3 text-emerald-800">{{ m }}</div>{% endfor %}{% endwith %}{% if form_mode %}<div class="mx-auto max-w-3xl rounded-3xl bg-white p-6 shadow-sm"><h1 class="mb-6 text-2xl font-extrabold">{{ 'إضافة منتج' if form_mode == 'new' else 'تعديل المنتج' }}</h1><form method="post" class="grid gap-4"><input name="title" required placeholder="عنوان المنتج" value="{{ form_product.title if form_product else '' }}" class="rounded-xl border px-4 py-3"><input name="price" required placeholder="السعر، مثال: 29" value="{{ form_product.price if form_product else '' }}" class="rounded-xl border px-4 py-3"><input name="short_description" placeholder="وصف مختصر" value="{{ form_product.short_description if form_product else '' }}" class="rounded-xl border px-4 py-3"><textarea name="description" rows="6" placeholder="الوصف الكامل" class="rounded-xl border px-4 py-3">{{ form_product.description if form_product else '' }}</textarea><input name="image_url" placeholder="رابط صورة المنتج" value="{{ form_product.image_url if form_product else '' }}" class="rounded-xl border px-4 py-3"><input name="payment_url" placeholder="رابط الدفع في Shopier" value="{{ form_product.payment_url if form_product else '' }}" class="rounded-xl border px-4 py-3"><input name="download_url" placeholder="رابط تحميل الملف الرقمي" value="{{ form_product.download_url if form_product else '' }}" class="rounded-xl border px-4 py-3"><div class="flex gap-3"><button class="rounded-xl bg-violet-600 px-6 py-3 font-bold text-white">حفظ</button><a href="{{ url_for('admin') }}" class="rounded-xl bg-slate-100 px-6 py-3 font-bold">إلغاء</a></div></form></div>{% else %}<div class="mb-8 flex items-center justify-between"><div><h1 class="text-3xl font-extrabold">لوحة الإدارة</h1><p class="mt-1 text-slate-500">إدارة المنتجات والطلبات</p></div><a href="{{ url_for('add_product') }}" class="rounded-xl bg-violet-600 px-5 py-3 font-bold text-white">+ إضافة منتج</a></div><section class="overflow-hidden rounded-3xl bg-white shadow-sm"><div class="overflow-x-auto"><table class="w-full min-w-[720px] text-right text-sm"><thead class="bg-slate-50"><tr><th class="p-4">المنتج</th><th class="p-4">السعر</th><th class="p-4">الدفع</th><th class="p-4">التحميل</th><th class="p-4">إجراءات</th></tr></thead><tbody class="divide-y">{% for p in products %}<tr><td class="p-4 font-bold">{{ p.title }}</td><td class="p-4">{{ p.price }} ر.س</td><td class="p-4">{{ 'جاهز' if p.payment_url else 'ناقص' }}</td><td class="p-4">{{ 'جاهز' if p.download_url else 'ناقص' }}</td><td class="flex gap-2 p-4"><a href="{{ url_for('edit_product', product_id=p.id) }}" class="rounded-lg bg-amber-100 px-3 py-2 text-amber-800">تعديل</a><form method="post" action="{{ url_for('delete_product', product_id=p.id) }}" onsubmit="return confirm('هل تريد حذف المنتج؟')"><button class="rounded-lg bg-rose-100 px-3 py-2 text-rose-700">حذف</button></form></td></tr>{% else %}<tr><td colspan="5" class="p-8 text-center text-slate-500">لا توجد منتجات بعد.</td></tr>{% endfor %}</tbody></table></div></section><section class="mt-8 overflow-hidden rounded-3xl bg-white shadow-sm"><h2 class="border-b p-5 text-xl font-extrabold">آخر الطلبات</h2><div class="overflow-x-auto"><table class="w-full min-w-[600px] text-right text-sm"><thead class="bg-slate-50"><tr><th class="p-4">رقم</th><th class="p-4">المنتج</th><th class="p-4">التاريخ</th><th class="p-4">الحالة</th></tr></thead><tbody class="divide-y">{% for o in orders %}<tr><td class="p-4">#{{ o.id }}</td><td class="p-4 font-bold">{{ o.product_title }}</td><td class="p-4">{{ o.created_at }}</td><td class="p-4"><form method="post" action="{{ url_for('update_order_status', order_id=o.id) }}"><select name="status" onchange="this.form.submit()" class="rounded-lg border px-2 py-1"><option value="pending" {% if o.status == 'pending' %}selected{% endif %}>قيد الانتظار</option><option value="paid" {% if o.status == 'paid' %}selected{% endif %}>مدفوع</option><option value="cancelled" {% if o.status == 'cancelled' %}selected{% endif %}>ملغى</option></select></form></td></tr>{% else %}<tr><td colspan="4" class="p-8 text-center text-slate-500">لا توجد طلبات بعد.</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}</main>{% endif %}</body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>الإدارة | {{ store_name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>body{font-family:Cairo,sans-serif}</style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+{% if login or setup_required %}
+  <main class="flex min-h-screen items-center justify-center px-5">
+    <div class="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
+      {% if setup_required %}
+        <div class="rounded-2xl bg-amber-50 p-5 text-center text-amber-800">
+          <h1 class="font-bold">يلزم إعداد ADMIN_PASSWORD</h1>
+          <p class="mt-2 text-sm leading-7">أضف متغير البيئة ADMIN_PASSWORD في Render ثم أعد تشغيل الخدمة.</p>
+        </div>
+      {% else %}
+        <h1 class="text-2xl font-extrabold">دخول لوحة الإدارة</h1>
+        <p class="mt-2 text-sm text-slate-500">أدخل كلمة مرور المدير للمتابعة.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}<div class="mt-4 rounded-xl bg-rose-100 p-3 text-sm text-rose-700">{{ message }}</div>{% endfor %}
+        {% endwith %}
+        <form method="post" class="mt-6">
+          <label class="mb-2 block text-sm font-bold">كلمة المرور</label>
+          <input type="password" name="password" required autofocus class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-violet-500">
+          <button class="mt-4 w-full rounded-xl bg-violet-600 px-4 py-3 font-bold text-white hover:bg-violet-700">دخول</button>
+        </form>
+      {% endif %}
+      <a href="{{ url_for('index') }}" class="mt-6 block text-center text-sm text-slate-500">العودة للمتجر</a>
+    </div>
+  </main>
+{% else %}
+  <nav class="border-b bg-white">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
+      <a href="{{ url_for('index') }}" class="font-extrabold text-violet-700">{{ store_name }}</a>
+      <a href="{{ url_for('admin_logout') }}" class="text-sm text-rose-600">تسجيل الخروج</a>
+    </div>
+  </nav>
+  <main class="mx-auto max-w-7xl px-5 py-8">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="mb-5 rounded-xl bg-emerald-100 p-3 text-emerald-800">{{ message }}</div>{% endfor %}
+    {% endwith %}
+
+    {% if form_mode %}
+      <div class="mx-auto max-w-3xl rounded-3xl bg-white p-6 shadow-sm">
+        <h1 class="mb-2 text-2xl font-extrabold">{{ 'إضافة منتج' if form_mode == 'new' else 'تعديل المنتج' }}</h1>
+        <p class="mb-6 text-sm leading-7 text-slate-500">ملف PDF يُحفظ خارج مجلد static ولا يظهر كرابط عام. يدعم رفع ملفات حتى 25 ميغابايت.</p>
+        <form method="post" enctype="multipart/form-data" class="grid gap-4">
+          <input name="title" required placeholder="عنوان المنتج" value="{{ form_product.title if form_product else '' }}" class="rounded-xl border px-4 py-3">
+          <input name="price" required placeholder="السعر، مثال: 29" value="{{ form_product.price if form_product else '' }}" class="rounded-xl border px-4 py-3">
+          <input name="short_description" placeholder="وصف مختصر" value="{{ form_product.short_description if form_product else '' }}" class="rounded-xl border px-4 py-3">
+          <textarea name="description" rows="6" placeholder="الوصف الكامل" class="rounded-xl border px-4 py-3">{{ form_product.description if form_product else '' }}</textarea>
+          <input name="image_url" placeholder="رابط صورة المنتج" value="{{ form_product.image_url if form_product else '' }}" class="rounded-xl border px-4 py-3">
+          <input name="payment_url" placeholder="رابط الدفع في Shopier" value="{{ form_product.payment_url if form_product else '' }}" class="rounded-xl border px-4 py-3">
+          {% if form_mode == 'edit' %}
+            <div class="rounded-xl bg-slate-50 p-4 text-sm">
+              {% if current_file_ready %}<span class="font-bold text-emerald-700">ملف PDF الخاص موجود.</span> ارفع ملفاً جديداً لاستبداله، أو اترك الحقل فارغاً للاحتفاظ به.
+              {% else %}<span class="font-bold text-amber-700">لا يوجد ملف PDF خاص جاهز حالياً.</span> ارفع ملف المنتج لتفعيل الشراء.
+              {% endif %}
+            </div>
+          {% else %}
+            <p class="text-sm text-slate-500">رفع ملف المنتج مطلوب قبل تفعيل زر الشراء.</p>
+          {% endif %}
+          <label class="grid gap-2 text-sm font-bold">ملف PDF الخاص بالمنتج
+            <input name="download_file" type="file" accept="application/pdf,.pdf" class="rounded-xl border bg-white px-4 py-3 font-normal">
+          </label>
+          <div class="flex gap-3">
+            <button class="rounded-xl bg-violet-600 px-6 py-3 font-bold text-white">حفظ</button>
+            <a href="{{ url_for('admin') }}" class="rounded-xl bg-slate-100 px-6 py-3 font-bold">إلغاء</a>
+          </div>
+        </form>
+      </div>
+    {% else %}
+      <div class="mb-8 flex items-center justify-between">
+        <div><h1 class="text-3xl font-extrabold">لوحة الإدارة</h1><p class="mt-1 text-slate-500">إدارة المنتجات والطلبات</p></div>
+        <a href="{{ url_for('add_product') }}" class="rounded-xl bg-violet-600 px-5 py-3 font-bold text-white">+ إضافة منتج</a>
+      </div>
+
+      <section class="overflow-hidden rounded-3xl bg-white shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[720px] text-right text-sm">
+            <thead class="bg-slate-50"><tr><th class="p-4">المنتج</th><th class="p-4">السعر</th><th class="p-4">الدفع</th><th class="p-4">الملف الخاص</th><th class="p-4">إجراءات</th></tr></thead>
+            <tbody class="divide-y">
+            {% for product in products %}
+              <tr>
+                <td class="p-4 font-bold">{{ product.title }}</td>
+                <td class="p-4">{{ product.price }} ₺</td>
+                <td class="p-4">{{ 'جاهز' if product.payment_url else 'ناقص' }}</td>
+                <td class="p-4">{{ 'جاهز' if file_ready_by_id[product.id] else 'ارفع PDF' }}</td>
+                <td class="flex gap-2 p-4">
+                  <a href="{{ url_for('edit_product', product_id=product.id) }}" class="rounded-lg bg-amber-100 px-3 py-2 text-amber-800">تعديل</a>
+                  <form method="post" action="{{ url_for('delete_product', product_id=product.id) }}" onsubmit="return confirm('هل تريد حذف المنتج؟')"><button class="rounded-lg bg-rose-100 px-3 py-2 text-rose-700">حذف</button></form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="p-8 text-center text-slate-500">لا توجد منتجات بعد.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mt-8 overflow-hidden rounded-3xl bg-white shadow-sm">
+        <div class="border-b p-5">
+          <h2 class="text-xl font-extrabold">آخر الطلبات</h2>
+          <p class="mt-2 text-sm leading-7 text-amber-800">تحقق من عملية الدفع في لوحة Shopier قبل تغيير حالة الطلب إلى «مدفوع». العودة إلى صفحة النجاح وحدها لا تثبت الدفع.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[720px] text-right text-sm">
+            <thead class="bg-slate-50"><tr><th class="p-4">رقم</th><th class="p-4">المنتج</th><th class="p-4">التاريخ</th><th class="p-4">الحالة</th></tr></thead>
+            <tbody class="divide-y">
+            {% for order in orders %}
+              <tr>
+                <td class="p-4">#{{ order.id }}</td>
+                <td class="p-4 font-bold">{{ order.product_title }}</td>
+                <td class="p-4">{{ order.created_at }}</td>
+                <td class="p-4">
+                  <form method="post" action="{{ url_for('update_order_status', order_id=order.id) }}">
+                    <select name="status" onchange="this.form.submit()" class="rounded-lg border px-2 py-1">
+                      <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>قيد الانتظار</option>
+                      <option value="paid" {% if order.status == 'paid' %}selected{% endif %}>مدفوع</option>
+                      <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>ملغى</option>
+                    </select>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="p-8 text-center text-slate-500">لا توجد طلبات بعد.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
+  </main>
+{% endif %}
+</body>
+</html>
