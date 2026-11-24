@@ -1,5 +1,6 @@
 import hashlib
 import os
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -123,6 +124,61 @@ class PrivateDownloadTests(unittest.TestCase):
                 "SELECT status FROM orders WHERE id = ?", (order_id,)
             ).fetchone()["status"]
         self.assertEqual(status, "paid")
+
+    def test_edition_copy_migration_preserves_custom_copy_and_delivery_settings(self):
+        original_database = store.app.config["DATABASE"]
+        with tempfile.TemporaryDirectory(prefix="lulu-copy-migration-") as tmp:
+            database_path = Path(tmp) / "legacy.db"
+            old_color_short = "كتاب PDF ثنائي اللغة عربي–تركي للأطفال من 3 إلى 6 سنوات، يجمع الحروف والأرقام والأشكال والحيوانات في أنشطة تلوين ممتعة."
+            old_color_description = "كتاب PDF ثنائي اللغة من 9 صفحات من عالم لولو للصغار، يساعد الطفل على التعرف إلى الحروف العربية والتركية، بما فيها İ و I و Ş و Ğ و Ü و Ö و Ç، مع نطق عربي مبسّط للكلمات التركية عند الحاجة. يتضمن أنشطة للعدّ والتلوين واكتشاف الأشكال والتعرف إلى الحيوانات وتمارين التتبع والرسم، إضافة إلى شهادة إتمام تشجّع الطفل على مواصلة التعلم. مناسب للمنزل أو الروضة، ومصمم للأطفال من 3 إلى 6 سنوات."
+            old_bear_description = "قصة قصيرة من 10 صفحات مناسبة للقراءة المشتركة. يتعلم الدب الصغير أن الشجاعة لا تعني غياب الخوف، بل التقدم خطوة وطلب المساندة عند الحاجة."
+            with sqlite3.connect(database_path) as db:
+                db.execute(
+                    """CREATE TABLE products (
+                        id INTEGER PRIMARY KEY, title TEXT NOT NULL,
+                        short_description TEXT NOT NULL, description TEXT NOT NULL,
+                        price TEXT NOT NULL, image_url TEXT NOT NULL,
+                        payment_url TEXT NOT NULL, download_url TEXT NOT NULL,
+                        created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""
+                )
+                db.execute(
+                    """CREATE TABLE orders (
+                        id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL,
+                        status TEXT NOT NULL, created_at TEXT NOT NULL)"""
+                )
+                db.execute(
+                    """INSERT INTO products VALUES
+                       (1, ?, ?, ?, '24.90', '', 'https://pay.example/color',
+                        'keep-color.pdf', '2025-01-01', '2025-01-01')""",
+                    ("ألوان وحروف مع لولو", old_color_short, old_color_description),
+                )
+                db.execute(
+                    """INSERT INTO products VALUES
+                       (2, ?, 'Admin teaser', ?, '14.90', '',
+                        'https://pay.example/bear', 'keep-bear.pdf',
+                        '2025-01-01', '2025-01-01')""",
+                    ("الدب الصغير الشجاع", old_bear_description),
+                )
+            store.app.config["DATABASE"] = str(database_path)
+            try:
+                with store.app.app_context():
+                    store.init_db()
+                    rows = store.get_db().execute(
+                        "SELECT * FROM products WHERE id IN (1, 2) ORDER BY id"
+                    ).fetchall()
+                color, bear = rows
+                new_color = next(p for p in store.SEED_PRODUCTS if p["title"] == "ألوان وحروف مع لولو")
+                new_bear = next(p for p in store.SEED_PRODUCTS if p["title"] == "الدب الصغير الشجاع")
+                self.assertEqual(color["short_description"], new_color["short_description"])
+                self.assertEqual(color["description"], new_color["description"])
+                self.assertEqual(color["payment_url"], "https://pay.example/color")
+                self.assertEqual(color["download_url"], "keep-color.pdf")
+                self.assertEqual(bear["short_description"], "Admin teaser")
+                self.assertEqual(bear["description"], new_bear["description"])
+                self.assertEqual(bear["payment_url"], "https://pay.example/bear")
+                self.assertEqual(bear["download_url"], "keep-bear.pdf")
+            finally:
+                store.app.config["DATABASE"] = original_database
 
 
 if __name__ == "__main__":

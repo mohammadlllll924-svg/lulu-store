@@ -7,3 +7,8 @@ store.db
 private_downloads/
 instance/
 .DS_Store
+books/edition-2026/reviews/
+books/edition-2026/preflight/
+books/edition-2026/sources/*/main.pdf
+books/edition-2026/sources/*/*.log
+books/edition-2026/sources/*/*.verify.json

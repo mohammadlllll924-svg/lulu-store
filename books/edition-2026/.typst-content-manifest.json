@@ -1,0 +1,15 @@
+{
+  "task_kind": "new-document",
+  "output": "pdf",
+  "signals": [],
+  "hard_constraints": [
+    "five standalone A4 portrait early-learning workbooks",
+    "Arabic right-to-left with Turkish and English learning support",
+    "large child-friendly labels and print-friendly activity areas"
+  ],
+  "content_features": {
+    "code_blocks": 0,
+    "defined_terms": 0,
+    "portrait_images": 25
+  }
+}
